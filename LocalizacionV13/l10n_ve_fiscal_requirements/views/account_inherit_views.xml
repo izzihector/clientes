@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="account_inherit_view_form" model="ir.ui.view">
+        <field name="name">account.inherit.view.form</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group/group/field[@name='partner_id']" position="after">    
+		<field name="invoice_number" attrs="{'invisible': [('type', '=', 'in_refund')], 'required': [('type', 'in', ('in_invoice', 'out_invoice')) ]}"/>
+                <field name="invoice_ctrl_number" attrs="{'invisible': [('type', '=', 'in_refund')], 'required': [('type', 'in', ('in_invoice', 'out_invoice')) ]}"/>
+		<!--<field name="rif" attrs="{'invisible': [('type', 'not in', ('in_refund'))]}"/>-->
+		<field name="rif"/>
+            </xpath>
+            <xpath expr="//group[@id='header_right_group']" position="inside">
+                <field name="import_form_num" attrs="{'invisible': [('type', 'not in', ('in_invoice'))]}"/>
+                <field name="import_dossier" attrs="{'invisible': [('type', 'not in', ('in_invoice'))]}"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
