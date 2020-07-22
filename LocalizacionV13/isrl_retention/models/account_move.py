@@ -22,7 +22,8 @@ class AccountMove(models.Model):
             self.create_retention()
 
     def create_retention(self):
-        if self.type in ('in_invoice','out_invoice'):
+        #if self.type in ('in_invoice','out_invoice'):
+        if self.type in ('in_invoice','out_invoice','in_refund','out_refund','in_receipt','out_receipt'):#darrell
             if self.isrl_ret_id.id:
                 pass
             else: 
@@ -30,6 +31,7 @@ class AccountMove(models.Model):
                     self.isrl_ret_id = self.env['isrl.retention'].create({
                         'invoice_id': self.id,
                         'partner_id': self.partner_id.id,
+                        'move_id':self.id,
                     })
                     for item in self.invoice_line_ids:
                         if item.concept_isrl_id:
@@ -50,7 +52,8 @@ class AccountMove(models.Model):
                 else :
                     raise UserError("the Partner does not have identified the type of person.")
 
-        if self.type =='in_invoice':
+        if self.type =='in_invoice' or self.type =='in_refund' or self.type =='in_receipt':#darrell
+        #if self.type=='in_invoice':
             self.isrl_ret_id.action_post()
 
     def verifica_exento_islr(self):

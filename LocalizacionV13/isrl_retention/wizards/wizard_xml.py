@@ -23,10 +23,7 @@ class WiizarXml(models.TransientModel):
 
     date_from = fields.Date(string='Date From', default=lambda *a:datetime.now().strftime('%Y-%m-%d'))
     date_to = fields.Date('Date To', default=lambda *a:(datetime.now() + timedelta(days=(1))).strftime('%Y-%m-%d'))
-    state = fields.Selection([('choose', 'choose'), ('get', 'get')],default='choose')
-    report = fields.Binary('Prepared file', filters='.xls', readonly=True)
-    name =  fields.Char('File Name', size=32)
-    
+
     def create_xml(self):
 
         retencion = self.env['isrl.retention'].search([
@@ -74,28 +71,12 @@ class WiizarXml(models.TransientModel):
                 elemento_hijo_8 = ET.SubElement(elemento_hijo_1, 'PorcentajeRetencion').text=str(int(line.cantidad))
 
         tree = ET.ElementTree(elemento_1)
-        tree.write('isrl_odoo.xml', encoding='utf-8',xml_declaration=True)
+        tree.write('/opt/odoo/addons/isrl_retention/static/doc/isrl_odoo.xml', encoding='utf-8',xml_declaration=True)
         #tree.write('/home/gregorio/Desarrollo/odoo/INM/extras/desarrollo/isrl_retention/static/doc/isrl_odoo.xml', encoding='utf-8',xml_declaration=True)
         #tree.write('C:/Odoo 13.0e/server/odoo/LocalizacionV13/isrl_retention/static/doc/isrl_odoo.xml', encoding='utf-8',xml_declaration=True)
-        xml = open('isrl_odoo.xml')
-        out = xml.read()
-        base64.b64encode(bytes(out, 'utf-8'))
+
         action = self.env.ref('isrl_retention.action_account_xml_wizard_descargar').read()[0]
-        #self.write({'state': 'get', 'report': base64.b64encode(bytes(out, 'utf-8')), 'name':'isrl_odoo.xml'})
-
-        ids = self.env['account.xml.wizard.descargar'].create({ 'report': base64.b64encode(bytes(out, 'utf-8')), 'name':'isrl_odoo.xml'})
-        action['res_id']= ids.id
         return action
-        # return {
-        #     'type': 'ir.actions.act_window',
-        #     'res_model': 'account.wizard.libro.compras',
-        #     'view_mode': 'form',
-        #     'view_type': 'form',
-        #     'res_id': self.id,
-        #     'views': [(False, 'form')],
-        #     'target': 'new',
-        # }
-
 
 class WiizarXmlDescargar(models.TransientModel):
     _name = "account.xml.wizard.descargar"
@@ -106,4 +87,3 @@ class WiizarXmlDescargar(models.TransientModel):
         return url
 
     name = fields.Char(string='Link',default=_set_name_value,readonly="True",)
-    report = fields.Binary('Prepared file', filters='.xls', readonly=True)

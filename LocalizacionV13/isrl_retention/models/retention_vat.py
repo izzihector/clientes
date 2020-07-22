@@ -11,28 +11,28 @@ _logger = logging.getLogger('__name__')
 
 class ProductTemplate(models.Model):
     _inherit = 'product.template'
-    concept_isrl_id = fields.Many2one('islr.concept', string='ISRL Concept')
+    concept_isrl_id = fields.Many2one('islr.concept', string='ISLR Concept')
 
 
 class InvoiceLineInherit(models.Model):
     _inherit = 'account.move.line'
 
-    concept_isrl_id = fields.Many2one(related='product_id.product_tmpl_id.concept_isrl_id', string='ISRL Concepto')
-    vat_isrl_line_id = fields.Many2one('isrl.retention.invoice.linet', string='ISRL Line')
+    concept_isrl_id = fields.Many2one(related='product_id.product_tmpl_id.concept_isrl_id', string='ISLR Concepto')
+    vat_isrl_line_id = fields.Many2one('isrl.retention.invoice.linet', string='ISLR Line')
 
 
 class VatRetentionInvoiceLine(models.Model):
     """This model is for a line invoices withholed."""
     _name = 'isrl.retention.invoice.line'
 
-    name = fields.Many2one('islr.concept', string='ISRL Concept')
+    name = fields.Many2one('islr.concept', string='ISLR Concept')
     code = fields.Char( string='Código')
     retention_id = fields.Many2one('isrl.retention', string='Vat retention')
     cantidad = fields.Float(string='Cantidad Porcentual')
     base = fields.Float(string='Base')
     retention = fields.Float(string='Retención')
     sustraendo = fields.Float(string='Sustraendo')
-    total = fields.Float(string='ISRL Amount retention')
+    total = fields.Float(string='ISLR Amount retention')
     
 class RetentionVat(models.Model):
     """This is a main model for rentetion vat control."""
@@ -45,13 +45,14 @@ class RetentionVat(models.Model):
     type = fields.Selection(related='invoice_id.type',)
     
     date_move = fields.Date(string='Date Move',default=lambda *a:datetime.now().strftime('%Y-%m-%d'))
-    date_isrl = fields.Date(string='Date ISRL',default=lambda *a:datetime.now().strftime('%Y-%m-%d'))
+    date_isrl = fields.Date(string='Date ISLR',default=lambda *a:datetime.now().strftime('%Y-%m-%d'))
     partner_id = fields.Many2one(comodel_name='res.partner', string='Empresa')
     invoice_id = fields.Many2one(comodel_name='account.move', string='Factura')
     
     lines_id = fields.One2many(comodel_name='isrl.retention.invoice.line', inverse_name='retention_id', string='Lines')
     
     state = fields.Selection([('draft', 'Draft'), ('done', 'Done'),], string='State', readonly=True, default='draft')
+
 
     def doc_cedula(self,aux):
         #nro_doc=self.partner_id.vat
@@ -88,88 +89,142 @@ class RetentionVat(models.Model):
     def action_post(self):
         customer = ('out_invoice','out_refund','out_receipt')
         vendor   = ('in_invoice','in_refund','in_receipt')
-        name_asiento = self.env['ir.sequence'].next_by_code('purchase.isrl.retention.account')
+        #name_asiento = self.env['ir.sequence'].next_by_code('purchase.isrl.retention.account')
         if self.invoice_id.company_id.partner_id.sale_isrl_id.id:
-            self.move_id =  self.env['account.move'].create({
-                'type': 'entry',
-                'isrl_ret_id': self.id,
-                'name': name_asiento,
-                'ref': "Retención del %s %% ISRL de la Factura %s" % (self.partner_id.name,self.invoice_id.name),
-                'journal_id' :self.invoice_id.company_id.partner_id.sale_isrl_id.id
-            })
-            if self.type in customer:
-                value = {
-                    'name': name_asiento,
-                    'ref': "Retención del %s %% ISRL de la Factura %s" % (self.partner_id.name,self.invoice_id.name),
-                    'move_id':  self.move_id.id,
-                    'date': self.date_move,
-                    'partner_id': self.partner_id.id,
-                    'account_id': self.invoice_id.company_id.partner_id.property_account_receivable_id.id, 
-                    'credit': self.vat_retentioned,
-                    'debit': 0.0,
-                    'balance':-self.vat_retentioned, # signo negativo
-                    'price_unit':self.vat_retentioned,
-                    'price_subtotal':self.vat_retentioned,
-                    'price_total':self.vat_retentioned,
-                }
-
-                self.env['account.move.line'].create(value)
-
-                value = {
-                    'name': name_asiento,
-                    'ref': "Retención del %s %% ISRL de la Factura %s" % (self.partner_id.name,self.invoice_id.name),
-                    'move_id':  self.move_id.id,
-                    'date': self.date_move,
-                    'partner_id': self.partner_id.id,
-                    'account_id': self.invoice_id.company_id.partner_id.account_isrl_receivable_id.id,
-                    'credit':  0.0,
-                    'debit': self.vat_retentioned, # aqi va cero   EL DEBITO CUNDO TIENE VALOR, ES QUE EN ACCOUNT_MOVE TOMA UN VALOR
-                    'balance':-self.vat_retentioned, # signo negativo
-                    'price_unit':self.vat_retentioned,
-                    'price_subtotal':self.vat_retentioned,
-                    'price_total':self.vat_retentioned,
-                }
-
-                self.env['account.move.line'].create(value)
-            else :
-                self.name = self.env['ir.sequence'].next_by_code('purchase.isrl.retention.voucher.number') 
-                value = {
-                    'name': name_asiento,
-                    'ref': "Retención del %s %% ISRL de la Factura %s" % (self.partner_id.name,self.invoice_id.name),
-                    'move_id':  self.move_id.id,
-                    'date': self.date_move,
-                    'partner_id': self.partner_id.id,
-                    'account_id': self.invoice_id.company_id.partner_id.property_account_payable_id.id, 
-                    'credit': 0.0,
-                    'debit': self.vat_retentioned,
-                    'balance':-self.vat_retentioned, # signo negativo
-                    'price_unit':self.vat_retentioned,
-                    'price_subtotal':self.vat_retentioned,
-                    'price_total':self.vat_retentioned,
-                }
-
-                self.env['account.move.line'].create(value)
-
-                value = {
-                    'name': name_asiento,
-                    'ref': "Retención del %s %% ISRL de la Factura %s" % (self.partner_id.name,self.invoice_id.name),
-                    'move_id':  self.move_id.id,
-                    'date': self.date_move,
-                    'partner_id': self.partner_id.id,
-                    'account_id': self.invoice_id.company_id.partner_id.account_isrl_payable_id.id,
-                    'credit': self.vat_retentioned,
-                    'debit':  0.0, # aqi va cero   EL DEBITO CUNDO TIENE VALOR, ES QUE EN ACCOUNT_MOVE TOMA UN VALOR
-                    'balance':-self.vat_retentioned, # signo negativo
-                    'price_unit':self.vat_retentioned,
-                    'price_subtotal':self.vat_retentioned,
-                    'price_total':self.vat_retentioned,
-                }
-                self.env['account.move.line'].create(value)
 
             self.state =  'done' 
-            self.move_id.action_post()
+            if self.invoice_id.type in vendor:
+                self.name=self.env['ir.sequence'].next_by_code('purchase.isrl.retention.voucher.number')
+            else:
+                pass
+            #self.move_id.action_post() # DARRELL
+            name_asiento = self.env['ir.sequence'].next_by_code('purchase.isrl.retention.account')
+            id_move=self.registro_movimiento_retencion(name_asiento)
+            idv_move=id_move.id
+            valor=self.registro_movimiento_linea_retencion(idv_move,name_asiento)
+            moves= self.env['account.move'].search([('id','=',idv_move)])
+            moves.filtered(lambda move: move.journal_id.post_at != 'bank_rec').post()          
+
+            
         else :
             raise UserError("Configure el Diario en la compañia")
+
+    def registro_movimiento_retencion(self,consecutivo_asiento):
+        #raise UserError(_('darrell = %s')%self.partner_id.vat_retention_rate)
+        name = consecutivo_asiento
+        signed_amount_total=0
+        #amount_itf = round(float(total_monto) * float((igtf_porcentage / 100.00)),2)
+        if self.invoice_id.type=="in_invoice" or self.invoice_id.type=="in_receipt":
+            signed_amount_total=self.vat_retentioned
+        if self.type=="out_invoice" or self.type=="out_receipt":
+            signed_amount_total=(-1*self.vat_retentioned)
+
+        if self.invoice_id.type=="out_invoice" or self.invoice_id.type=="out_refund" or self.invoice_id.type=="out_receipt":
+            id_journal=self.partner_id.sale_isrl_id.id
+            name_retenido=self.invoice_id.company_id.partner_id.name
+            #rate_valor=self.partner_id.vat_retention_rate
+        if self.invoice_id.type=="in_invoice" or self.invoice_id.type=="in_refund" or self.invoice_id.type=="in_receipt":
+            id_journal=self.invoice_id.company_id.partner_id.sale_isrl_id.id
+            name_retenido=self.partner_id.name            
+            #rate_valor=self.company_id.partner_id.vat_retention_rate
+        #raise UserError(_('papa = %s')%signed_amount_total)
+        value = {
+            'name': name,
+            'date': self.invoice_id.date,#listo
+            #'amount_total':self.vat_retentioned,# LISTO
+            'partner_id': self.partner_id.id, #LISTO
+            'journal_id':id_journal,
+            'ref': "Retención del %s %% ISLR de la Factura %s" % (name_retenido,self.invoice_id.name),
+            #'amount_total':self.vat_retentioned,# LISTO
+            #'amount_total_signed':signed_amount_total,# LISTO
+            'type': "entry",# estte campo es el que te deja cambiar y almacenar valores
+            'isrl_ret_id': self.id,
+        }
+        #raise UserError(_('value= %s')%value)
+        move_obj = self.env['account.move']
+        move_id = move_obj.create(value)    
+        #raise UserError(_('move_id= %s')%move_id) 
+        return move_id
+
+    def registro_movimiento_linea_retencion(self,id_movv,consecutivo_asiento):
+        #raise UserError(_('ID MOVE = %s')%id_movv)
+        name = consecutivo_asiento
+        valores = self.vat_retentioned #VALIDAR CONDICION
+        cero = 0.0
+        if self.invoice_id.type=="out_invoice" or self.invoice_id.type=="out_refund" or self.invoice_id.type=="out_receipt":
+            cuenta_ret_cliente=self.partner_id.account_isrl_receivable_id.id# cuenta retencion cliente
+            cuenta_ret_proveedor=self.partner_id.account_isrl_payable_id.id#cuenta retencion proveedores
+            cuenta_clien_cobrar=self.partner_id.property_account_receivable_id.id
+            cuenta_prove_pagar = self.partner_id.property_account_payable_id.id
+            name_retenido=self.invoice_id.company_id.partner_id.name
+            #rate_valor=self.partner_id.vat_retention_rate
+        if self.type=="in_invoice" or self.type=="in_refund" or self.type=="in_receipt":
+            cuenta_ret_cliente=self.invoice_id.company_id.partner_id.account_isrl_receivable_id.id# cuenta retencion cliente
+            cuenta_ret_proveedor=self.invoice_id.company_id.partner_id.account_isrl_payable_id.id#cuenta retencion proveedores
+            cuenta_clien_cobrar=self.invoice_id.company_id.partner_id.property_account_receivable_id.id
+            cuenta_prove_pagar = self.invoice_id.company_id.partner_id.property_account_payable_id.id
+            name_retenido=self.partner_id.name
+            #rate_valor=self.company_id.partner_id.vat_retention_rate
+
+        tipo_empresa=self.invoice_id.type
+        #raise UserError(_('papa = %s')%tipo_empresa)
+        if tipo_empresa=="in_invoice" or tipo_empresa=="in_receipt":#aqui si la empresa es un proveedor
+            cuenta_haber=cuenta_ret_proveedor
+            cuenta_debe=cuenta_prove_pagar            
+            balance_a=cero-valores
+            balance_b=valores-cero
+
+        if tipo_empresa=="in_refund":
+            cuenta_haber=cuenta_prove_pagar
+            cuenta_debe=cuenta_ret_proveedor
+            balance_a=cero-valores
+            balance_b=valores-cero
+
+        if tipo_empresa=="out_invoice" or tipo_empresa=="out_receipt":# aqui si la empresa es cliente
+            cuenta_haber=cuenta_clien_cobrar
+            cuenta_debe=cuenta_ret_cliente
+            balance_a=valores-cero
+            balance_b=cero-valores
+
+        if tipo_empresa=="out_refund":
+            cuenta_haber=cuenta_ret_cliente
+            cuenta_debe=cuenta_clien_cobrar
+            balance_a=valores-cero
+            balance_b=cero-valores
+        #balances=cero-valores
+        balances=balance_a
+        value = {
+             'name': name,
+             'ref' : "Retención del %s %% ISLR de la Factura %s" % (name_retenido,self.move_id.name),
+             'move_id': int(id_movv),
+             'date': self.move_id.date,
+             'partner_id': self.partner_id.id,
+             'account_id': cuenta_haber,
+             #'amount_currency': 0.0,
+             #'date_maturity': False,
+             'credit': valores,
+             'debit': 0.0, # aqi va cero   EL DEBITO CUNDO TIENE VALOR, ES QUE EN ACCOUNT_MOVE TOMA UN VALOR
+             'balance':-valores, # signo negativo
+             'price_unit':balances,
+             'price_subtotal':balances,
+             'price_total':balances,
+
+        }
+        move_line_obj = self.env['account.move.line']
+        move_line_id1 = move_line_obj.create(value)
+
+        #balances=valores-cero
+        balances=balance_b
+        value['account_id'] = cuenta_debe
+        value['credit'] = 0.0 # aqui va cero
+        value['debit'] = valores
+        value['balance'] = valores
+        value['price_unit'] = balances
+        value['price_subtotal'] = balances
+        value['price_total'] = balances
+
+
+        move_line_id2 = move_line_obj.create(value)
     
     def formato_fecha2(self,date):
         fecha = str(date)
@@ -272,6 +327,6 @@ class RetentionVat(models.Model):
                 item.vat_retentioned += line.total
 
     amount_untaxed = fields.Float(string='Base Imponible',compute='_compute_amount_untaxed')
-    vat_retentioned = fields.Float(string='ISRl retenido',compute='_compute_vat_retentioned')
+    vat_retentioned = fields.Float(string='ISLR retenido',compute='_compute_vat_retentioned')
     
     

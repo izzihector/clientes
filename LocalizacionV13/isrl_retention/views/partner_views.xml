@@ -8,7 +8,7 @@
         <field name="arch" type="xml">
             <xpath expr="//page[@name='internal_notes']" position="after">
             <page name="isrl_retention" string="Retencion ISLR">
-                <group string="Agent ISLR">
+                <group string="Agente ISLR">
                     <field name="ret_agent_isrl"/>
                 </group>
 
@@ -18,9 +18,6 @@
                 <group name="vat_retention2" col="4"  >
                     <field name="account_isrl_receivable_id" attrs="{'readonly': [('ret_agent_isrl', '=', False)]}"/>
                     <field name="account_isrl_payable_id" attrs="{'readonly': [('ret_agent_isrl', '=', False)]}" />                   
-                </group>
-                <group name="firma" col="4"  >
-                    <field name="firma"  widget="image" attrs="{'readonly': [('ret_agent_isrl', '=', False)]}"/>                   
                 </group>
             </page>
                 

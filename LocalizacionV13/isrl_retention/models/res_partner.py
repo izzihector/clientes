@@ -13,5 +13,4 @@ class Partners(models.Model):
     sale_isrl_id = fields.Many2one('account.journal', string='Journal')
     account_isrl_receivable_id = fields.Many2one('account.account', string='Cuenta ISLR Retencion a Cobrar (Clientes)')
     account_isrl_payable_id = fields.Many2one('account.account', string='Cuenta ISLR Retencion a Pagar (Proveedores)')
-    firma = fields.Binary(string='Firma y Sello')
     

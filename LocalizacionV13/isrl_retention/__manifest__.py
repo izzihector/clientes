@@ -26,7 +26,6 @@
             'views/partner_views.xml',
             'views/account_move_views.xml',
             'wizards/xml_views.xml',
-            'wizards/arc.xml',
             'report/vat_isrl_voucher.xml',
             ],
         'installable': True,
