@@ -10,6 +10,8 @@ class AccountInherit(models.Model):
 
     rif = fields.Char(string='RIF', store=True)
     #rif = fields.Char(related='partner_id.vat', string='RIF', store=True)
+    nr_manual= fields.Boolean(defaul=False)
+    
     invoice_number = fields.Char(required=False)
 
     invoice_number_pro = fields.Char(required=False)# campo libre
@@ -27,6 +29,7 @@ class AccountInherit(models.Model):
     import_form_num = fields.Char(string='Import form number')
     import_dossier = fields.Char(string='Import dossier number')
     import_date = fields.Char(string='Import date')
+
 
 
 class AccountTax(models.Model):

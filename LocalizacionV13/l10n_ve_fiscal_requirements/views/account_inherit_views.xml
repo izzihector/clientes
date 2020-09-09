@@ -5,9 +5,14 @@
         <field name="model">account.move</field>
         <field name="inherit_id" ref="account.view_move_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//group/group/field[@name='partner_id']" position="after">    
+            <!--xpath expr="//field[@name='partner_id']" position="after">
+
+                <field name="nr_manual" string="Numeración Manual?"  attrs="{'invisible': [('type', 'in',('entry','in_invoice','in_refund','in_receipt'))]}"/>  (widget="boolean_toggle")                           
+            </xpath-->
+
+        <xpath expr="//group/group/field[@name='partner_id']" position="after">    
 		
-        <!--field name="invoice_number" attrs="{'invisible': [('type', '=', 'in_refund')], 'required': [('type', 'in', ('in_invoice', 'out_invoice')) ]}"/-->
+        <field name="nr_manual" string="Numeración Manual?"  attrs="{'invisible': [('type', 'in',('entry','in_invoice','in_refund','in_receipt'))]}"/>
 
         <!-- **************** Campos factura proveedor**************    -->
         <field name="invoice_number_pro" string="Nro Factura:" attrs="{'invisible': [('type', 'not in', ('in_invoice'))], 'required':[('type', 'in', ('in_invoice'))]}"/>
@@ -22,18 +27,19 @@
          <!-- ******** Fin Campos rectificativa o Nota Credito/Debito proveedor ********-->
 
         <!-- ************** Campos factura cliente ************    -->
-        <field name="invoice_number_cli" string="Nro Factura:" readonly="True" attrs="{'invisible': [('type', 'not in', ('out_invoice'))]}"/>
-        <field name="invoice_ctrl_number_cli" string="Nro Control:" readonly="True" attrs="{'invisible': [('type', 'not in', ('out_invoice'))]}"/>
+        <field name="invoice_number_cli" string="Nro Factura:" attrs="{'invisible': [('type', 'not in', ('out_invoice'))], 'readonly':[('nr_manual','=',False)]}"/>
+
+        <field name="invoice_ctrl_number_cli" string="Nro Control:" attrs="{'invisible': [('type', 'not in', ('out_invoice'))], 'readonly':[('nr_manual','=',False)]}"/>
         <!-- ************** Fin Campos factura cliente ************    -->
 
         <!-- ******** Campos rectificativa o Nota Credito/Debito Cliente ************-->
-        <field name="refuld_number_cli" string="Nota Nro:" readonly="True" attrs="{'invisible': [('type', 'not in', ('out_refund','out_receipt'))]}"/><!--Nota Debito Nro-->        
+        <field name="refuld_number_cli" string="Nota Nro:" attrs="{'invisible': [('type', 'not in', ('out_refund','out_receipt'))], 'readonly':[('nr_manual','=',False)]}"/><!--Nota Debito Nro-->        
 
-        <field name="refund_ctrl_number_cli" string="Nro Control:" readonly="True" attrs="{'invisible': [('type', 'not in', ('out_refund','out_receipt'))]}"/>
+        <field name="refund_ctrl_number_cli" string="Nro Control:" attrs="{'invisible': [('type', 'not in', ('out_refund','out_receipt'))], 'readonly':[('nr_manual','=',False)]}"/>
         <!-- ********* Fin Campos rectificativa o Nota Credito/Debito Cliente **********-->
         
 		<!--<field name="rif" attrs="{'invisible': [('type', 'not in', ('in_refund'))]}"/>-->
-		<field name="rif"/>
+		<field name="rif" string="Rif"/>
             </xpath>
             <xpath expr="//group[@id='header_right_group']" position="inside">
                 <field name="import_form_num" attrs="{'invisible': [('type', 'not in', ('in_invoice'))]}"/>
@@ -41,8 +47,9 @@
                 <field name="import_date" attrs="{'invisible': [('type', 'not in', ('in_invoice'))]}"/>
             </xpath>
 
-            <xpath expr="//field[@name='rif']" position="inside">
-                <field name="ref" string="Fact. Referencia"/>
+            <xpath expr="//field[@name='ref']" position="replace">
+                <field name="ref" string="Fact. Referencia"
+                	attrs="{'required': [('type', 'in',('in_receipt','in_refund','out_receipt','out_refund'))], 'invisible': [('type', 'in',('in_invoice','out_invoice'))]}"/>
             </xpath>
         </field>
     </record>

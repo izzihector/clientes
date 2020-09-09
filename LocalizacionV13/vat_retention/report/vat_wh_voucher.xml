@@ -15,7 +15,7 @@
                                         <tr>
                                             <td style="width:30%;text-align:center;">
                                                 <t t-if="o.company_id.logo">  
-                                                    <img t-attf-src="data:image/*;base64,{{o.company_id.logo}}" style="width:auto; height:50px;"/>
+                                                    <img t-attf-src="data:image/*;base64,{{o.company_id.logo}}" style="width:auto; height:60px;"/>
                                                 </t>
                                             </td>
                                             <td style="width:70%;">
@@ -211,31 +211,47 @@
                                             <span t-esc="line.invoice_id.ref"/>
                                         </td>
                                         <td style="text-align:center;border:1px solid #000;">
-                                            <span t-esc="line.float_format(line.invoice_id.amount_total)" />
+                                            <!--CAMPO TOTAL COMPRAS CON IVA /-->
+                                            <!--span t-esc="line.float_format(line.invoice_id.amount_total)" /-->
+                                            <span t-esc="line.float_format(line.amount_untaxed+line.amount_vat_ret)" />
                                         </td>
                                         <td style="text-align:center;border:1px solid #000;">
+                                            <!-- campo Compras exentas-->
+                                            <t t-if="line.tax_id.amount==0"  >
+                                            <span t-esc="line.float_format(line.amount_untaxed)"/>
+                                            </t>
                                         </td>
                                         <td style="text-align:center;border:1px solid #000;">
+                                            <t t-if="line.tax_id.amount!=0"  >
                                             <!--span t-esc="line.float_format(line.invoice_id.amount_untaxed)"/ OJO -->
                                             <span t-esc="line.float_format(line.amount_untaxed)"/>
+                                            </t>
                                         </td>
                                         <td style="text-align:center;border:1px solid #000;">
                                             <!-- <span t-esc="'%.2f'%(line.invoice_id.invoice_line_ids.tax_ids.amount)"/>% -->
                                             <!--t t-set="por_iva" t-value="line.amount_vat_ret*100/line.amount_untaxed" /-->
                                             <t t-set="por_iva" t-value="line.tax_id.amount" />
+                                            <t t-if="line.tax_id.amount!=0"  >
                                             <span>
 											<p t-raw="line.float_format(por_iva)" ></p>
                                             </span>
+                                            </t>
                                         </td>
                                         <td style="text-align:center;border:1px solid #000;">
+                                            <t t-if="line.tax_id.amount!=0"  >
                                             <span t-esc="line.float_format(line.amount_vat_ret)"/>
+                                            </t>
                                         </td>
                                         <td style="text-align:center;border:1px solid #000;">
+                                            <t t-if="line.tax_id.amount!=0"  >
                                             <span t-esc="line.float_format(line.retention_rate)"/>
+                                            </t>
                                             
                                         </td>
                                         <td style="text-align:center;border:1px solid #000;">
+                                            <t t-if="line.tax_id.amount!=0"  >
                                             <span t-esc="line.float_format(line.retention_amount)"/>
+                                            </t>
                                         </td>
                                     </tr>
                                     <tr>

@@ -11,7 +11,6 @@
                     name="vat" 
                     string="RIF" 
                     attrs="{'required': [('vendor', '=', 'national')], 'invisible': [('vendor', '=', 'international')]}"
-                    required="True"
                     />
             </xpath>
             <!--xpath expr="//field[@name='vat']" position="before">
@@ -19,6 +18,7 @@
             </xpath-->
             <xpath expr="//field[@name='category_id']" position="after">
                 <field name="seniat_url" widget="url"/>
+                <field name="contribuyente" widget="radio" required='True' string="Es contribuyente?"/>
             </xpath>
             <xpath expr="//group/group/field[@name='vat']" position="after">
                 <field name="vendor" widget="radio" string="Tipo Proveedor"/>

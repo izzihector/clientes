@@ -31,7 +31,8 @@ class AccountMove(models.Model):
         if self.partner_id.doc_type=="v":
             tipo_doc="V"
         if self.partner_id.doc_type=="e":
-            self.partner_id.doc_type="E"
+            #self.partner_id.doc_type="E"
+            tipo_doc="E"
         if self.partner_id.doc_type=="g":
             tipo_doc="G"
         if self.partner_id.doc_type=="j":
@@ -42,7 +43,11 @@ class AccountMove(models.Model):
             tipo_doc="C"
         if not self.partner_id.doc_type:
             tipo_doc="?"
-        self.rif=str(tipo_doc)+"-"+str(self.partner_id.vat)
+        if not self.partner_id.vat:
+            vat=str(00000000)
+        else:
+            vat=self.partner_id.vat
+        self.rif=str(tipo_doc)+"-"+str(vat)
 
     # Main Function
     def action_post(self):
@@ -107,23 +112,35 @@ class AccountMove(models.Model):
             partners='cli' # aqui si es un cliente
 
         if self.type=="out_invoice":
-            self.invoice_number_cli=self.get_invoice_number_cli()
-            self.invoice_number=self.invoice_number_cli #self.get_invoice_number_cli()
-            self.invoice_ctrl_number_cli=self.get_invoice_ctrl_number_cli()
-            self.invoice_ctrl_number=self.invoice_ctrl_number_cli #self.get_invoice_ctrl_number_cli()
+            if self.nr_manual==False:
+                self.invoice_number_cli=self.get_invoice_number_cli()
+                self.invoice_number=self.invoice_number_cli #self.get_invoice_number_cli()
+                self.invoice_ctrl_number_cli=self.get_invoice_ctrl_number_cli()
+                self.invoice_ctrl_number=self.invoice_ctrl_number_cli #self.get_invoice_ctrl_number_cli()
+            else:
+                self.invoice_number=self.invoice_number_cli
+                self.invoice_ctrl_number=self.invoice_ctrl_number_cli
 
         if self.type=="out_refund":
-            self.refuld_number_cli=self.get_refuld_number_cli()
-            self.invoice_number=self.refuld_number_cli #self.get_refuld_number_cli()
-            self.refund_ctrl_number_cli=self.get_refuld_ctrl_number_cli()
-            self.invoice_ctrl_number=self.refund_ctrl_number_cli #self.get_refuld_ctrl_number_cli()
+            if self.nr_manual==False:
+                self.refuld_number_cli=self.get_refuld_number_cli()
+                self.invoice_number=self.refuld_number_cli #self.get_refuld_number_cli()
+                self.refund_ctrl_number_cli=self.get_refuld_ctrl_number_cli()
+                self.invoice_ctrl_number=self.refund_ctrl_number_cli #self.get_refuld_ctrl_number_cli()
+            else:
+                self.invoice_number=self.refuld_number_cli
+                self.invoice_ctrl_number=self.refund_ctrl_number_cli
 
         if self.type=="out_receipt":
-            self.refuld_number_cli=self.get_refuld_number_pro()
-            self.invoice_number=self.refuld_number_cli #self.get_refuld_number_cli()
-            self.refund_ctrl_number_cli=self.get_refuld_ctrl_number_pro()
-            self.invoice_ctrl_number=self.refund_ctrl_number_cli #self.get_refuld_ctrl_number_cli()
-            #self.invoice_number=self.get_nro_cliente()
+            if self.nr_manual==False:
+                self.refuld_number_cli=self.get_refuld_number_pro()
+                self.invoice_number=self.refuld_number_cli #self.get_refuld_number_cli()
+                self.refund_ctrl_number_cli=self.get_refuld_ctrl_number_pro()
+                self.invoice_ctrl_number=self.refund_ctrl_number_cli #self.get_refuld_ctrl_number_cli()
+                #self.invoice_number=self.get_nro_cliente()
+            else:
+                self.invoice_number=self.refuld_number_cli
+                self.invoice_ctrl_number=self.refund_ctrl_number_cli
 
     def action_create_vat_retention(self,tipo_factt):
         "This function created the VAT retention Voucher"
@@ -161,10 +178,15 @@ class AccountMove(models.Model):
 
         if tipo_facttt=="cliente":
             por_ret=self.partner_id.vat_retention_rate
+            type_tax_use='sale'
+
         if tipo_facttt=="proveedor":
             por_ret=self.company_id.partner_id.vat_retention_rate
+            type_tax_use='purchase'
 
-        lista_movline = self.env['account.move.line'].search([('move_id','=',self.id)])
+        #lista_movline = self.env['account.move.line'].search([('move_id','=',self.id)])
+        lista_movline = self.invoice_line_ids
+        #raise UserError(_('lista_movline = %s')%lista_movline)
         for det_mov_line in lista_movline:
             if det_mov_line.product_id:
                 importe_base=det_mov_line.price_subtotal
@@ -185,11 +207,56 @@ class AccountMove(models.Model):
                 'retention_id':ret.id,
                 'tax_id':det_mov_line.tax_ids.id,
                 }
-                if monto_iva!=0:
-                    ret_line = ret_lines.create(values)
+                """if monto_iva!=0:
+                    ret_line = ret_lines.create(values)""" # codigo que excluye las lineas exentas
+                ret_line = ret_lines.create(values) #  Codigo 2 este incluye las lineas exentas
         self.write({'vat_ret_id':ret.id})
+        # NUEVO CODIGO
+        self.unifica_alicuota_iguales_iva(type_tax_use)
         return ret
-        
+
+    # FUNCION LA CUAL TOMA LINEAS DE FACTURAS DE ALICUOTAS IGUALES Y LAS UNIFICA PARA SER UNA SOLA LINEA POR ALICUOTA EN LOS COMPROBANTES
+    def unifica_alicuota_iguales_iva(self,type_tax_use):
+        lista_impuesto = self.env['account.tax'].search([('type_tax_use','=',type_tax_use)])
+        #raise UserError(_('lista_impuesto = %s')%lista_impuesto)
+        for det_tax in lista_impuesto:
+            #raise UserError(_('det_tax.id = %s')%det_tax.id)
+            lista_mov_line = self.env['vat.retention.invoice.line'].search([('move_id','=',self.id),('tax_id','=',det_tax.id)])
+            #raise UserError(_('lista_mov_line = %s')%lista_mov_line)
+            amount_untaxed=0
+            amount_vat_ret=0
+            retention_amount=0
+            if lista_mov_line:
+                for det_mov_line in lista_mov_line:                
+                    amount_untaxed=amount_untaxed+det_mov_line.amount_untaxed
+                    amount_vat_ret=amount_vat_ret+det_mov_line.amount_vat_ret
+                    retention_amount=retention_amount+det_mov_line.retention_amount
+
+                    nombre=det_mov_line.name
+                    #raise UserError(_('nombre1 = %s')%nombre)
+                    retention_id=det_mov_line.retention_id.id
+                    invoice_number=det_mov_line.invoice_number
+                    rate=det_mov_line.retention_rate
+                    move_id=det_mov_line.move_id.id
+                    invoice_id=det_mov_line.invoice_id.id
+                    tax_id=det_tax.id
+                #raise UserError(_('nombre2 = %s')%nombre)
+                lista_mov_line.unlink()
+                move_obj = self.env['vat.retention.invoice.line']
+                valor={
+                'name':nombre,
+                'retention_id':retention_id,
+                'invoice_number':invoice_number,
+                'retention_rate':rate,
+                'move_id':move_id,
+                'invoice_id':invoice_id,
+                'tax_id':tax_id,
+                'amount_untaxed':amount_untaxed,
+                'amount_vat_ret':amount_vat_ret,
+                'retention_amount':retention_amount,
+                }
+                move_obj.create(valor)
+
 
     def actualiza_voucher(self,ret_id,tipo_factt):
         
@@ -257,23 +324,7 @@ class AccountMove(models.Model):
                 'manual':False,
                 })
         # PUNTO D
-        #raise UserError(_('self = %s')%self)
-        """class RetentionVat(models.Model):
-         _inherit = 'vat.retention'
-         if self.type=="in_invoice" or self.type=="in_refund" or self.type=="in_receipt":
-            #raise UserError(_('self2 = %s')%lista_account_retention)
-            lista_account_retention.action_posted()"""
-        # FIN PUNTO D
-
-
-        # CODIGO QUE VALIDA SI EN LA FACTURA SE LE APLICA EL IMPUESTO DE RETENCION DEL PROVEEDOR QUE ESTA CONFIGURADO    
-        #valida_mov_lin=self.env['account.move.line'].search([('move_id','=',id_factura),('tax_line_id','=',impuesto_ret_id)])
-        #if valida_mov_lin.tax_line_id.id== False:
-            #raise UserError(_('Este Persona / Empresa debe aplicarse el impuesto de retencion :( %s)')%self.partner_id.vat_tax_account_id.name) 
-
-
-        #moves= self.env['account.move'].search([('id','=',id_factura)])
-        #moves.filtered(lambda move: move.journal_id.post_at != 'bank_rec').post()  
+       
 
     def get_invoice_number_cli(self):
         '''metodo que crea el Nombre del asiento contable si la secuencia no esta creada, crea una con el

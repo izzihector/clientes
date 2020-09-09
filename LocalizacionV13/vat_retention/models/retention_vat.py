@@ -114,7 +114,7 @@ class RetentionVat(models.Model):
         return resultado
 
     def periodo(self):
-        fecha = str(self.invoice_id.invoice_date)
+        fecha = str(self.voucher_delivery_date)
         fecha_aux=fecha
         ano=fecha_aux[0:4]
         mes=fecha[5:7]
@@ -413,10 +413,10 @@ class RetentionVat(models.Model):
         return  result
 
    
-    def unlink(self):
+    #def unlink(self):
         """Throw an exception if the retention voucher is not in cancel state."""
-        for voucher in self:
-            raise ValidationError(_("No se pueden eliminar comprobantes"))
+        #for voucher in self:
+            #raise ValidationError(_("No se pueden eliminar comprobantes"))
 
 
     @api.model

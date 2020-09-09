@@ -29,6 +29,11 @@ class Partner(models.Model):
         required=True, default=""
     )
     #vat_tax_account_id = fields.Many2one('account.tax', string='Impuesto de Retencion')
+
+    contribuyente = fields.Selection(selection=[
+        ('True','Si'),
+        ('False','No')
+        ], required='True', default='True')
     people_type = fields.Selection(string='People type', selection=[
         ('resident_nat_people','PNRE Residente Natural Person'),
         ('non_resit_nat_people','PNNR Non-resident Natural Person'),

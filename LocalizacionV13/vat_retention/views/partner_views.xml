@@ -10,9 +10,9 @@
             <xpath expr="//field[@name='vat']" position="before">
                 <field name="doc_type" string="Grupo Contribuyente"/>
             </xpath>
-            <xpath expr="//field[@name='vat']" position="replace">
+            <!--xpath expr="//field[@name='vat']" position="replace">
                 <field name="vat" string="Rif" required="True"/>
-            </xpath>
+            </xpath-->
 
             <!--xpath expr="//group[@name='accounting_entries']" position="after">
                 <group string="VAT Retention">

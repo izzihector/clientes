@@ -84,7 +84,7 @@
                     </group>
                     <notebook>
                         <page string="VAT Retention">
-                            <field name="retention_line_ids" nolabel="1">ojo
+                            <field name="retention_line_ids" nolabel="1">
                             <!--field name="retention_line_ids" nolabel="1" readonly="True"-->
                                 <tree string="VAT Retention Line" editable="buttom">
                                     <field name="invoice_number"/>
@@ -138,13 +138,12 @@
         <field name="arch" type="xml">
             <tree string="VAT Retention">
                 <field name="name"/>
-                <field name="is_customer"/>
-                <field name="is_supplier"/>
-                <field name="type" />
+                <field name="invoice_id"/>
+                <field name="type" string="Tipo" />
                 <field name="partner_id"/>
                 <field name="amount_untaxed" string="Importe Base"/>
-                <field name="vat_retentioned"/>
-                <field name="accouting_date"/>
+                <field name="vat_retentioned" string="Importe Retenido"/>
+                <field name="voucher_delivery_date" string="Fecha Comp."/>
                 <!-- <field name="journal_id"/> -->
             </tree>
         </field>
